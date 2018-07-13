@@ -2,7 +2,8 @@
 <resources>
     <declare-styleable name="InfiniXIndicator">
         <attr name="x_background_color" format="color" />
-        <attr name="x_dot_unselected_color" format="color"/>
-        <attr name="x_dot_selected_color" format="color"/>
+        <attr name="x_dot_unselected_color" format="color" />
+        <attr name="x_dot_selected_color" format="color" />
+        <attr name="x_dot_count" format="integer" />
     </declare-styleable>
 </resources>

@@ -65,6 +65,7 @@ public class InfiniXIndicator extends RelativeLayout {
             backgroundColor = a.getColor(R.styleable.InfiniXIndicator_x_background_color, context.getResources().getColor(R.color.infinix_background));
             dotUnselectedColor = a.getColor(R.styleable.InfiniXIndicator_x_dot_unselected_color, context.getResources().getColor(R.color.infinix_dot_light_color));
             dotSelectedColor = a.getColor(R.styleable.InfiniXIndicator_x_dot_selected_color, context.getResources().getColor(R.color.infinix_dot_color));
+            itemsToShow = a.getInt(R.styleable.InfiniXIndicator_x_dot_count, 0);
 
             GradientDrawable shapeDrawable = (GradientDrawable) context.getResources().getDrawable(R.drawable.dot_solid);
             shapeDrawable.setColor(dotSelectedColor);
@@ -195,6 +196,7 @@ public class InfiniXIndicator extends RelativeLayout {
         return (int) (dp * context.getResources().getDisplayMetrics().density);
     }
 
+    
     public void setItemsToShow(int itemsToShow) {
         this.itemsToShow = itemsToShow;
     }

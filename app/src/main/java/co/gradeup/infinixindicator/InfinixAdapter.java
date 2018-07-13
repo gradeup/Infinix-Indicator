@@ -15,7 +15,7 @@ public class InfinixAdapter extends FragmentPagerAdapter {
 
     @Override
     public int getCount() {
-        return 14;
+        return 8;
     }
 
     @Override
@@ -23,9 +23,7 @@ public class InfinixAdapter extends FragmentPagerAdapter {
         Bundle bundle = new Bundle();
 
         ColorFragment colorFragment = new ColorFragment();
-
         bundle.putInt("index", position);
-
         colorFragment.setArguments(bundle);
         return colorFragment;
     }

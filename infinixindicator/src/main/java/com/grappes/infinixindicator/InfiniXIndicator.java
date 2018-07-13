@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.ShapeDrawable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
@@ -12,7 +11,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.ShareActionProvider;
 
 
 public class InfiniXIndicator extends RelativeLayout {
@@ -21,12 +19,14 @@ public class InfiniXIndicator extends RelativeLayout {
     int lastPageAccessed = 0, lpa = 0;
     View slidingDot;
     LinearLayout sliderContainer;
+    RelativeLayout sliderParentContainer;
     Context context;
     ViewPager viewPager;
     OnPageChangeListener onPageChangeListener;
     int backgroundColor;
     int dotUnselectedColor;
     int dotSelectedColor;
+    int itemsToShow;
 
     public InfiniXIndicator(Context context) {
         super(context);
@@ -46,12 +46,12 @@ public class InfiniXIndicator extends RelativeLayout {
         init(context, attrs);
     }
 
-    private void init(Context context, AttributeSet attrs)
-    {
+    private void init(Context context, AttributeSet attrs) {
         this.context = context;
         View v = mInflater.inflate(R.layout.infinix_container, this, true);
         slidingDot = v.findViewById(R.id.filled_dot);
         sliderContainer = v.findViewById(R.id.container);
+        sliderParentContainer = v.findViewById(R.id.container_container);
         View parent = v.findViewById(R.id.parent);
         View leftParkingView = v.findViewById(R.id.left_cover_view);
         View rightParkingView = v.findViewById(R.id.right_cover_view);
@@ -83,41 +83,39 @@ public class InfiniXIndicator extends RelativeLayout {
     public void setViewPager(ViewPager vPager) {
 
         this.viewPager = vPager;
+        final PagerAdapter pagerAdapter = viewPager.getAdapter();
 
-        if(viewPager==null)
-        {
+        if (viewPager == null) {
             throw new NullPointerException("View Pager cannot be null");
         }
 
-        final PagerAdapter pagerAdapter = viewPager.getAdapter();
-        generatePagerIndicator(pagerAdapter);
-        if(pagerAdapter!=null)
-        {
-            if(pagerAdapter.getCount()>=10)
-            {
-                ((RelativeLayout.LayoutParams)slidingDot.getLayoutParams()).leftMargin = pxFromDp(context, 10);
-            }
-            else if(pagerAdapter.getCount() % 2 == 0)
-            {
-                ((RelativeLayout.LayoutParams) slidingDot.getLayoutParams()).leftMargin = (int) (pxFromDp(context, 10) * (5 - pagerAdapter.getCount()/2 + 1));
-            }
-            else if(pagerAdapter.getCount() % 2 == 1)
-            {
-                ((RelativeLayout.LayoutParams) slidingDot.getLayoutParams()).leftMargin = (int) (pxFromDp(context, 10) * (5 - pagerAdapter.getCount()/2 + 0.5));
-            }
-            slidingDot.requestLayout();
+        if (pagerAdapter == null) {
+            throw new NullPointerException("Adapter cannot be null");
         }
 
-        viewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+        if (itemsToShow != 0 && itemsToShow > pagerAdapter.getCount() || itemsToShow > 10) {
+            throw new IllegalStateException("Sliding Dots should be less than total fragments and should not be greater than 10");
+        }
+
+        generatePagerIndicator(pagerAdapter);
+        if (pagerAdapter.getCount() >= itemsToShow) {
+            ((RelativeLayout.LayoutParams) slidingDot.getLayoutParams()).leftMargin = pxFromDp(context, 10);
+        } else if (pagerAdapter.getCount() % 2 == 0) {
+            ((RelativeLayout.LayoutParams) slidingDot.getLayoutParams()).leftMargin = (int) (pxFromDp(context, 10) * (5 - pagerAdapter.getCount() / 2 + 1));
+        } else if (pagerAdapter.getCount() % 2 == 1) {
+            ((RelativeLayout.LayoutParams) slidingDot.getLayoutParams()).leftMargin = (int) (pxFromDp(context, 10) * (5 - pagerAdapter.getCount() / 2 + 0.5));
+        }
+        slidingDot.requestLayout();
+
+
+        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                if(onPageChangeListener!=null)
-                {
+                if (onPageChangeListener != null) {
                     onPageChangeListener.onPageScrolled(position, positionOffset, positionOffsetPixels);
                 }
 
                 boolean movingForward = false;
-                boolean firstSet = false;
 
                 if (lpa < position) {
                     movingForward = true;
@@ -125,24 +123,18 @@ public class InfiniXIndicator extends RelativeLayout {
 
                 lpa = position;
 
-                if (!firstSet) {
+                if (((movingForward && position < itemsToShow - 1) || (!movingForward && position < itemsToShow - 2)) || (movingForward && position == pagerAdapter.getCount() - 1) || (!movingForward && position == pagerAdapter.getCount() - 2)) {
 
-                    if (((movingForward && position < 9) || (!movingForward && position < 8)) || (movingForward && position == pagerAdapter.getCount() - 1) || (!movingForward && position == pagerAdapter.getCount() - 2)) {
-
-                        int index = position;
-                        if(movingForward && position == (pagerAdapter.getCount() - 1) && pagerAdapter.getCount()>9)
-                        {
-                            index = 9;
-                        }
-                        else if((!movingForward && position == pagerAdapter.getCount() - 2) && pagerAdapter.getCount()>9)
-                        {
-                            index = 8;
-                        }
-
-                        slidingDot.setTranslationX((index*pxFromDp(context, 10)) + (positionOffsetPixels * 1.0f / getScreenWidth()) * pxFromDp(context, 10));
-                    } else {
-                        sliderContainer.setTranslationX((movingForward ? 1 : -1) * (positionOffsetPixels * 1.0f / getScreenWidth()) * pxFromDp(context, 10));
+                    int index = position;
+                    if (movingForward && position == (pagerAdapter.getCount() - 1) && pagerAdapter.getCount() > itemsToShow - 1) {
+                        index = itemsToShow - 1;
+                    } else if ((!movingForward && position == pagerAdapter.getCount() - 2) && pagerAdapter.getCount() > itemsToShow - 2) {
+                        index = itemsToShow - 2;
                     }
+
+                    slidingDot.setTranslationX((index * pxFromDp(context, 10)) + (positionOffsetPixels * 1.0f / getScreenWidth()) * pxFromDp(context, 10));
+                } else {
+                    sliderContainer.setTranslationX((movingForward ? 1 : -1) * (positionOffsetPixels * 1.0f / getScreenWidth()) * pxFromDp(context, 10));
                 }
             }
 
@@ -152,10 +144,10 @@ public class InfiniXIndicator extends RelativeLayout {
                 if (Math.abs(position - lastPageAccessed) != 1) {
 
                     int index = position;
-                    if (position == 9 && pagerAdapter.getCount() == 10) {
-                        index = 9;
-                    } else if (position >= 9 && pagerAdapter.getCount() > 10) {
-                        index = 8;
+                    if (position == itemsToShow - 1 && pagerAdapter.getCount() == itemsToShow) {
+                        index = itemsToShow - 1;
+                    } else if (position >= itemsToShow - 1 && pagerAdapter.getCount() > itemsToShow) {
+                        index = itemsToShow - 2;
                     }
                     slidingDot.setTranslationX(0);
                     slidingDot.animate().translationXBy(pxFromDp(context, 10) * index);
@@ -164,16 +156,14 @@ public class InfiniXIndicator extends RelativeLayout {
 
                 lastPageAccessed = position;
 
-                if(onPageChangeListener!=null)
-                {
+                if (onPageChangeListener != null) {
                     onPageChangeListener.onPageSelected(position);
                 }
             }
 
             @Override
             public void onPageScrollStateChanged(int i) {
-                if(onPageChangeListener!=null)
-                {
+                if (onPageChangeListener != null) {
                     onPageChangeListener.onPageScrollStateChanged(i);
                 }
             }
@@ -189,16 +179,14 @@ public class InfiniXIndicator extends RelativeLayout {
         sliderContainer.setVisibility(View.VISIBLE);
         slidingDot.setVisibility(View.VISIBLE);
 
-
-        int itemsToShow = pagerAdapter.getCount() >= 10 ? 14 : pagerAdapter.getCount();
+        itemsToShow = itemsToShow == 0 ? pagerAdapter.getCount() > 10 ? 10 : pagerAdapter.getCount() : itemsToShow;
+        sliderParentContainer.getLayoutParams().width = pxFromDp(context, 10 * (itemsToShow + 2));
         sliderContainer.removeAllViews();
         for (int i = 0; i < itemsToShow; i++) {
             View view = View.inflate(context, R.layout.dot, null);
-
             GradientDrawable shapeDrawable = (GradientDrawable) context.getResources().getDrawable(R.drawable.dot_light);
             shapeDrawable.setColor(dotUnselectedColor);
             view.findViewById(R.id.dot_parent).setBackgroundDrawable(shapeDrawable);
-
             sliderContainer.addView(view);
         }
     }
@@ -207,12 +195,15 @@ public class InfiniXIndicator extends RelativeLayout {
         return (int) (dp * context.getResources().getDisplayMetrics().density);
     }
 
+    public void setItemsToShow(int itemsToShow) {
+        this.itemsToShow = itemsToShow;
+    }
+
     public static int getScreenWidth() {
         return Resources.getSystem().getDisplayMetrics().widthPixels;
     }
 
-    public void setOnPageChangeListener(OnPageChangeListener onPageChangeListener)
-    {
+    public void setOnPageChangeListener(OnPageChangeListener onPageChangeListener) {
         this.onPageChangeListener = onPageChangeListener;
     }
 

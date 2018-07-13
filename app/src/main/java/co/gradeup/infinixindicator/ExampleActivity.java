@@ -15,7 +15,7 @@ public class ExampleActivity extends AppCompatActivity {
 
         ViewPager viewPager = findViewById(R.id.view_pager);
         InfiniXIndicator infiniXIndicator = findViewById(R.id.infinix_indicator);
-
+        infiniXIndicator.setItemsToShow(3);
         InfinixAdapter adapter = new InfinixAdapter(getSupportFragmentManager());
         viewPager.setAdapter(adapter);
         infiniXIndicator.setViewPager(viewPager);
